@@ -17,6 +17,9 @@ AnalogIn Ain_s(A3);
 int sample = 100;
 float ADCdata[1000];
 
+EventQueue queue(32 * EVENTS_EVENT_SIZE);
+Thread t;
+
 void D()
 {
     if(mode > 1){
@@ -47,45 +50,36 @@ void mode_thread()
  {
      while(1){
         if(mode_next == 1){  
-            //fre = 1;
             uLCD.locate(0,0);
-            //uLCD.color(RED);
             uLCD.printf("\n1/8\n");
-            /*uLCD.locate(0,2);
-            uLCD.color(GREEN);
-            uLCD.printf("\n1/4\n");
-            uLCD.printf("\n1/2\n");
-            uLCD.printf("\n1\n");*/
         }
         else if(mode_next == 2)
         {
-            //fre = 0.36;
             uLCD.locate(0,0);
-            /*uLCD.color(GREEN);
-            uLCD.printf("\n1/8\n");
-            uLCD.locate(0,2);*/
-            //uLCD.color(RED);
             uLCD.printf("\n1/4\n");
-            /*uLCD.color(GREEN);
-            uLCD.printf("\n1/2\n");
-            uLCD.printf("\n1\n");*/
         }
         else if(mode_next == 3){
             fre = 0.036;
             uLCD.locate(0,0);
             uLCD.printf("\n1/2\n");
-            //uLCD.printf("\n1\n");
         }
         else if(mode_next == 4){
             fre = 0.036;
             uLCD.locate(0,0);
-
             uLCD.printf("\n1             \n");
         }
         ThisThread::sleep_for(50ms);
      }
  }
-
+void Sample(){
+    mode = mode_next;
+    Generate = mode;
+    for (j = 0; j <= 500; j++){
+        ADCdata[j] = Ain_s.read()*3.3;
+        printf("%f\r\n", ADCdata[j]);//ADCdata[j]);
+        wait_us(300);
+    }
+}
 
 int main()
 {
@@ -94,7 +88,10 @@ int main()
     thread.start(mode_thread);
     Up.rise(&U);
     down.rise(&D);
-    confirm.rise(&S);
+
+    confirm.rise(queue.event(Sample));
+    t.start(callback(&queue, &EventQueue::dispatch_forever));
+
 
     while(1) 
     {
@@ -102,9 +99,7 @@ int main()
             for(i = 0, j = 0; i <= 1; i=i+0.0625)
             {
                 Aout = 0.91 * i;
-                ADCdata[j] = Ain_s.read()*3.3;
                 ThisThread::sleep_for(4ms);
-                j = j + 1;
             }
             for(i = 0.91, k = 0; k <= 8; k = k + 1){
                 Aout = 0.91;
@@ -114,88 +109,58 @@ int main()
             for(i = 0.91; i >= 0; i=i-0.0625)
             {
                 Aout = 0.91 * i;
-                ADCdata[j] = Ain_s.read()*3.3;
                 ThisThread::sleep_for(4ms);
-                j = j + 1;
             }  
-            /*for (j = 0; j <=100; j++)
-            {
-                printf("%f\r\n", ADCdata[j]);
-            }*/
         }
         if(Generate == 3){  // 1/2HZ
             for(i = 0, j = 0; i <= 0.91; i=i+0.056875)
             {
                 Aout = i * 0.91;
-                ADCdata[j] = Ain_s.read()*3.3;
-                ThisThread::sleep_for(2ms);
-                j = j +1;
+                wait_us(1500);
             }
             for(i = 0.91, k = 0; k <= 16; k = k + 1){
                 Aout = 0.91;
                 ThisThread::sleep_for(10ms);
             }
-            // Make 'aout' go from 1 to 0, in 100 steps of 0.01
+            
             for(i = 0.91; i >= 0; i=i-0.0625)
             {
                 Aout = i * 0.91;
-                ADCdata[j] = Ain_s.read()*3.3;
-                ThisThread::sleep_for(2ms);
-                j = j + 1;
+                wait_us(1500);
             }  
-            /*for (j = 0; j <=100; j++)
-            {
-                printf("%f\r\n", ADCdata[j]);
-            }*/
         }
         if(Generate == 2){      // 1/4HZ
             for(i = 0, j = 0; i <= 0.91; i=i+0.0625)
             {
                 Aout = i * 0.91;
-                ADCdata[j] = Ain_s.read()*3.3;
-                //wait_us(500);
                 ThisThread::sleep_for(1ms);
-                j = j + 1;
             }
             for(i = 0.91, k = 0; k <= 20; k = k + 1){
                 Aout = 0.91;
                 ThisThread::sleep_for(10ms);
             }
-            // Make 'aout' go from 1 to 0, in 100 steps of 0.01
+            
             for(i = 0.91; i >= 0; i=i-0.0625)
             {
                 Aout = i * 0.91;
-                ADCdata[j] = Ain_s.read()*3.3;
-                //wait_us(500);
                 ThisThread::sleep_for(1ms);
-                j = j + 1;
             }  
-            /*for (j = 0; j <=100; j++)
-            {
-                printf("%f\r\n", ADCdata[j]);
-            }*/
         }
                 if(Generate == 1){      // 1/8HZ
             for(i = 0, j = 0; i <= 1; i=i+0.0625)
             {
                 Aout = i * 0.91;
-                ADCdata[j] = Ain_s.read()*3.3;
                 wait_us(500);
-                //ThisThread::sleep_for(1ms);
-                j = j + 1;
             }
             for(i = 0.91, k = 0; k <= 22; k = k + 1){
                 Aout = 0.91;
                 ThisThread::sleep_for(10ms);
             }
-            // Make 'aout' go from 1 to 0, in 100 steps of 0.01
+             
             for(i = 0.91; i >= 0; i=i-0.0625)
             {
                 Aout = i * 0.91;
-                ADCdata[j] = Ain_s.read()*3.3;
                 wait_us(500);
-                //ThisThread::sleep_for(1ms);
-                j = j + 1;
             }  
         }
     }
